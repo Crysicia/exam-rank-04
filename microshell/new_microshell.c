@@ -1,3 +1,9 @@
+
+// Satcheen says:
+// 	Copy argv
+// 	Replace every "|" by NULL
+// 	Send &argv[command_index] to execve
+
 #include "microshell.h"
 
 void fatal_error(void)
