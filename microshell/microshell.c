@@ -11,9 +11,9 @@ void ft_putstr_err(char *str) {
 	write(STDERR_FILENO, str, index);
 }
 
-int ft_execute(char *argv[], int index, int stdin, char *envp[]) {
+int ft_execute(char *argv[], int index, int ft_stdin, char *envp[]) {
 	argv[index] = NULL;
-	close(stdin);
+	close(ft_stdin);
 	execve(argv[0], argv, envp);
 	ft_putstr_err("error: cannot execute ");
 	ft_putstr_err(argv[0]);
@@ -56,7 +56,7 @@ int main(int argc, char *argv[], char *envp[]) {
 	int index = 0;
 	int current_pid = 0;
 	int fds[2] = {0};
-	int stdin = dup(STDIN_FILENO);
+	int ft_stdin = dup(STDIN_FILENO);
 
 	while (argv[index] && argv[index + 1])
 	{
@@ -67,32 +67,34 @@ int main(int argc, char *argv[], char *envp[]) {
 		} else if (is_last_cmd(argv, index)) {
 			current_pid = fork();
 			if (!current_pid) {
-				dup2(stdin, STDIN_FILENO);
-				if (ft_execute(argv, index, stdin, envp))
+				if (argv[0][0] == ';')
+					return 1;
+				dup2(ft_stdin, STDIN_FILENO);
+				if (ft_execute(argv, index, ft_stdin, envp))
 					return (1);
 			} else {
-				close(stdin);
+				close(ft_stdin);
 				waitpid(current_pid, NULL, 0);
-				stdin = dup(STDIN_FILENO);
+				ft_stdin = dup(STDIN_FILENO);
 			}
 		} else if (!strcmp(argv[index], "|")) {
 			pipe(fds);
 			current_pid = fork();
 			if (!current_pid) {
-				dup2(stdin, STDIN_FILENO);
+				dup2(ft_stdin, STDIN_FILENO);
 				dup2(fds[1], STDOUT_FILENO);
 				close_pipe(fds);
-				if (ft_execute(argv, index, stdin, envp))
+				if (ft_execute(argv, index, ft_stdin, envp))
 					return (1);
 			} else {
 				close(fds[1]);
-				close(stdin);
+				close(ft_stdin);
 				waitpid(current_pid, NULL, 0);
-				stdin = dup(fds[0]);
+				ft_stdin = dup(fds[0]);
 				close(fds[0]);
 			}
 		}
 	}
-	close(stdin);
+	close(ft_stdin);
 	return 0;
 }
